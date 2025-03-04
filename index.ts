@@ -94,4 +94,32 @@ export class MainPoker {
   evaluer(): ResultatComparaison {
     return this.evaluerTypeMain();
   }
+
+  comparerAvec(autreMain: MainPoker): number {
+    const eval1 = this.evaluer();
+    const eval2 = autreMain.evaluer();
+
+    return eval1.typeMain !== eval2.typeMain
+      ? eval1.typeMain - eval2.typeMain
+      : eval1.valeur !== eval2.valeur
+      ? eval1.valeur - eval2.valeur
+      : this.comparerCartes(autreMain);
+  }
+
+  private comparerCartes(autreMain: MainPoker): number {
+    for (let i = 0; i < this.cartesTriees.length; i++) {
+      if (this.cartesTriees[i].rang !== autreMain.cartesTriees[i].rang) {
+        return this.cartesTriees[i].rang - autreMain.cartesTriees[i].rang;
+      }
+    }
+    return 0;
+  }
+}
+
+export function evaluerMain(main: Carte[]): ResultatComparaison {
+  return new MainPoker(main).evaluer();
+}
+
+export function comparerMains(main1: Carte[], main2: Carte[]): number {
+  return new MainPoker(main1).comparerAvec(new MainPoker(main2));
 }
