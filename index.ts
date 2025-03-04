@@ -1,4 +1,4 @@
-import { Carte, Rang } from "./types";
+import { Carte, Rang, TypeMain, ResultatComparaison } from "./types";
 
 export class CarteUtils {
   static trier(cartes: Carte[]): Carte[] {
@@ -31,5 +31,67 @@ export class CarteUtils {
     return rangs.every((rang, i) => i === 4 || rang - rangs[i + 1] === 1)
       ? { estQuinte: true, hauteur: rangs[0] }
       : { estQuinte: false, hauteur: null };
+  }
+}
+
+export class MainPoker {
+  private readonly cartesTriees: Carte[];
+  private readonly occurrences: Map<Rang, number>;
+
+  constructor(private readonly cartes: Carte[]) {
+    if (cartes.length !== 5)
+      throw new Error("Une main doit contenir exactement 5 cartes");
+
+    this.cartesTriees = CarteUtils.trier(cartes);
+    this.occurrences = CarteUtils.compterOccurrences(this.cartesTriees);
+  }
+
+  private trouverMultiples(): { brelan?: Rang; paire: Rang[]; carre?: Rang } {
+    let brelan: Rang | undefined;
+    let carre: Rang | undefined;
+    const paires: Rang[] = [];
+
+    for (const [rang, count] of this.occurrences.entries()) {
+      if (count === 4) carre = rang;
+      else if (count === 3) brelan = rang;
+      else if (count === 2) paires.push(rang);
+    }
+
+    return { brelan, paire: paires, carre };
+  }
+
+  private evaluerTypeMain(): ResultatComparaison {
+    const estUneCouleur = CarteUtils.estCouleur(this.cartesTriees);
+    const { estQuinte, hauteur: hauteurQuinte } = CarteUtils.estQuinte(
+      this.cartesTriees
+    );
+    const { brelan, paire, carre } = this.trouverMultiples();
+
+    if (estUneCouleur && estQuinte) {
+      return hauteurQuinte === Rang.AS
+        ? { typeMain: TypeMain.QUINTE_FLUSH_ROYALE, valeur: Rang.AS }
+        : { typeMain: TypeMain.QUINTE_FLUSH, valeur: hauteurQuinte! };
+    }
+
+    if (carre) return { typeMain: TypeMain.CARRE, valeur: carre };
+    if (brelan && paire.length === 1)
+      return { typeMain: TypeMain.FULL, valeur: brelan };
+    if (estUneCouleur)
+      return { typeMain: TypeMain.COULEUR, valeur: this.cartesTriees[0].rang };
+    if (estQuinte) return { typeMain: TypeMain.QUINTE, valeur: hauteurQuinte! };
+    if (brelan) return { typeMain: TypeMain.BRELAN, valeur: brelan };
+    if (paire.length === 2)
+      return { typeMain: TypeMain.DEUX_PAIRES, valeur: Math.max(...paire) };
+    if (paire.length === 1)
+      return { typeMain: TypeMain.PAIRE, valeur: paire[0] };
+
+    return {
+      typeMain: TypeMain.CARTE_HAUTE,
+      valeur: this.cartesTriees[0].rang,
+    };
+  }
+
+  evaluer(): ResultatComparaison {
+    return this.evaluerTypeMain();
   }
 }
