@@ -1,5 +1,5 @@
-import { Carte, Couleur, Rang } from "./types";
-import { CarteUtils } from "./index";
+import { Carte, Couleur, Rang, TypeMain } from "./types";
+import { CarteUtils, MainPoker } from "./index";
 import { describe, it, expect } from "vitest";
 
 describe("Poker - Évaluation des mains", () => {
@@ -42,5 +42,55 @@ describe("Poker - Évaluation des mains", () => {
       expect(occurrences.get(Rang.DIX)).toBe(1);
       expect(occurrences.get(Rang.CINQ)).toBeUndefined();
     });
+  });
+
+  describe("MainPoker - Évaluation des mains", () => {
+    it("devrait identifier une main avec carte haute", () => {
+      const main: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.ROI, couleur: Couleur.PIQUE },
+        { rang: Rang.HUIT, couleur: Couleur.TREFLE },
+        { rang: Rang.SIX, couleur: Couleur.CARREAU },
+        { rang: Rang.QUATRE, couleur: Couleur.COEUR },
+      ];
+
+      const mainPoker = new MainPoker(main);
+      const resultat = mainPoker.evaluer();
+
+      expect(resultat.typeMain).toBe(TypeMain.CARTE_HAUTE);
+      expect(resultat.valeur).toBe(Rang.AS);
+    });
+  });
+
+  it("devrait identifier un brelan", () => {
+    const main: Carte[] = [
+      { rang: Rang.AS, couleur: Couleur.COEUR },
+      { rang: Rang.AS, couleur: Couleur.PIQUE },
+      { rang: Rang.AS, couleur: Couleur.TREFLE },
+      { rang: Rang.ROI, couleur: Couleur.CARREAU },
+      { rang: Rang.QUATRE, couleur: Couleur.COEUR },
+    ];
+
+    const mainPoker = new MainPoker(main);
+    const resultat = mainPoker.evaluer();
+
+    expect(resultat.typeMain).toBe(TypeMain.BRELAN);
+    expect(resultat.valeur).toBe(Rang.AS);
+  });
+
+  it("devrait identifier un full", () => {
+    const main: Carte[] = [
+      { rang: Rang.AS, couleur: Couleur.COEUR },
+      { rang: Rang.AS, couleur: Couleur.PIQUE },
+      { rang: Rang.AS, couleur: Couleur.TREFLE },
+      { rang: Rang.ROI, couleur: Couleur.CARREAU },
+      { rang: Rang.ROI, couleur: Couleur.COEUR },
+    ];
+
+    const mainPoker = new MainPoker(main);
+    const resultat = mainPoker.evaluer();
+
+    expect(resultat.typeMain).toBe(TypeMain.FULL);
+    expect(resultat.valeur).toBe(Rang.AS);
   });
 });
