@@ -1,5 +1,5 @@
 import { Carte, Couleur, Rang, TypeMain } from "./types";
-import { CarteUtils, MainPoker, evaluerMain } from "./index";
+import { CarteUtils, MainPoker, evaluerMain, comparerMains } from "./index";
 import { describe, it, expect } from "vitest";
 
 describe("Poker - Évaluation des mains", () => {
@@ -265,6 +265,155 @@ describe("Poker - Évaluation des mains", () => {
       const resultat = evaluerMain(main);
       expect(resultat.typeMain).toBe(TypeMain.QUINTE_FLUSH_ROYALE);
       expect(resultat.valeur).toBe(Rang.AS);
+    });
+  });
+
+  describe("Comparaison de mains", () => {
+    it("devrait déterminer la meilleure main entre deux cartes hautes", () => {
+      const main1: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.ROI, couleur: Couleur.PIQUE },
+        { rang: Rang.HUIT, couleur: Couleur.TREFLE },
+        { rang: Rang.SIX, couleur: Couleur.CARREAU },
+        { rang: Rang.QUATRE, couleur: Couleur.COEUR },
+      ];
+
+      const main2: Carte[] = [
+        { rang: Rang.ROI, couleur: Couleur.COEUR },
+        { rang: Rang.DAME, couleur: Couleur.PIQUE },
+        { rang: Rang.HUIT, couleur: Couleur.TREFLE },
+        { rang: Rang.SIX, couleur: Couleur.CARREAU },
+        { rang: Rang.QUATRE, couleur: Couleur.COEUR },
+      ];
+
+      expect(comparerMains(main1, main2)).toBe(1);
+      expect(comparerMains(main2, main1)).toBe(-1);
+    });
+
+    it("devrait déterminer la meilleure main entre différentes combinaisons", () => {
+      const paire: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.AS, couleur: Couleur.PIQUE },
+        { rang: Rang.HUIT, couleur: Couleur.TREFLE },
+        { rang: Rang.SIX, couleur: Couleur.CARREAU },
+        { rang: Rang.QUATRE, couleur: Couleur.COEUR },
+      ];
+
+      const carteHaute: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.ROI, couleur: Couleur.PIQUE },
+        { rang: Rang.DAME, couleur: Couleur.TREFLE },
+        { rang: Rang.VALET, couleur: Couleur.CARREAU },
+        { rang: Rang.NEUF, couleur: Couleur.COEUR },
+      ];
+
+      expect(comparerMains(paire, carteHaute)).toBe(1);
+      expect(comparerMains(carteHaute, paire)).toBe(-1);
+    });
+  });
+
+  describe("Validation et cas d'erreur", () => {
+    it("devrait rejeter une main avec plus de 5 cartes", () => {
+      const main: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.ROI, couleur: Couleur.PIQUE },
+        { rang: Rang.DAME, couleur: Couleur.TREFLE },
+        { rang: Rang.VALET, couleur: Couleur.CARREAU },
+        { rang: Rang.DIX, couleur: Couleur.COEUR },
+        { rang: Rang.NEUF, couleur: Couleur.COEUR },
+      ];
+
+      expect(() => evaluerMain(main)).toThrow(
+        "Une main doit contenir exactement 5 cartes"
+      );
+    });
+
+    it("devrait rejeter une main avec moins de 5 cartes", () => {
+      const main: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.ROI, couleur: Couleur.PIQUE },
+      ];
+
+      expect(() => evaluerMain(main)).toThrow(
+        "Une main doit contenir exactement 5 cartes"
+      );
+    });
+
+    it("devrait rejeter une main vide", () => {
+      const main: Carte[] = [];
+      expect(() => evaluerMain(main)).toThrow(
+        "Une main doit contenir exactement 5 cartes"
+      );
+    });
+
+    it("devrait gérer correctement les cartes en double", () => {
+      const main: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.DAME, couleur: Couleur.TREFLE },
+        { rang: Rang.VALET, couleur: Couleur.CARREAU },
+        { rang: Rang.DIX, couleur: Couleur.COEUR },
+      ];
+
+      const resultat = evaluerMain(main);
+      expect(resultat.typeMain).toBe(TypeMain.PAIRE);
+      expect(resultat.valeur).toBe(Rang.AS);
+    });
+  });
+
+  describe("Cas limites de comparaison", () => {
+    it("devrait gérer l'égalité parfaite", () => {
+      const main: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.ROI, couleur: Couleur.PIQUE },
+        { rang: Rang.DAME, couleur: Couleur.TREFLE },
+        { rang: Rang.VALET, couleur: Couleur.CARREAU },
+        { rang: Rang.DIX, couleur: Couleur.COEUR },
+      ];
+
+      expect(comparerMains(main, main)).toBe(0);
+    });
+
+    it("devrait comparer correctement deux mains de même type mais de valeurs différentes", () => {
+      const paireDAs: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.AS, couleur: Couleur.PIQUE },
+        { rang: Rang.CINQ, couleur: Couleur.TREFLE },
+        { rang: Rang.QUATRE, couleur: Couleur.CARREAU },
+        { rang: Rang.TROIS, couleur: Couleur.COEUR },
+      ];
+
+      const paireDeRois: Carte[] = [
+        { rang: Rang.ROI, couleur: Couleur.COEUR },
+        { rang: Rang.ROI, couleur: Couleur.PIQUE },
+        { rang: Rang.CINQ, couleur: Couleur.TREFLE },
+        { rang: Rang.QUATRE, couleur: Couleur.CARREAU },
+        { rang: Rang.TROIS, couleur: Couleur.COEUR },
+      ];
+
+      expect(comparerMains(paireDAs, paireDeRois)).toBe(1);
+      expect(comparerMains(paireDeRois, paireDAs)).toBe(-1);
+    });
+
+    it("devrait comparer correctement les cartes en cas d'égalité", () => {
+      const paireDAsAvecRoi: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.AS, couleur: Couleur.PIQUE },
+        { rang: Rang.ROI, couleur: Couleur.TREFLE },
+        { rang: Rang.QUATRE, couleur: Couleur.CARREAU },
+        { rang: Rang.TROIS, couleur: Couleur.COEUR },
+      ];
+
+      const paireDAsAvecDame: Carte[] = [
+        { rang: Rang.AS, couleur: Couleur.COEUR },
+        { rang: Rang.AS, couleur: Couleur.PIQUE },
+        { rang: Rang.DAME, couleur: Couleur.TREFLE },
+        { rang: Rang.QUATRE, couleur: Couleur.CARREAU },
+        { rang: Rang.TROIS, couleur: Couleur.COEUR },
+      ];
+
+      expect(comparerMains(paireDAsAvecRoi, paireDAsAvecDame)).toBe(1);
+      expect(comparerMains(paireDAsAvecDame, paireDAsAvecRoi)).toBe(-1);
     });
   });
 });
